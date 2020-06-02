@@ -11,9 +11,9 @@ import (
 
 const (
 	// simDrawFrames is the amount of frames per second a drawn simulation has
-	simDrawFrames = 30
+	simDrawFrames = 60
 	// simCliFrames is the max amount of interations of simulation per second in CLI simulation
-	simCliFrames = 500
+	simCliFrames = 1000
 )
 
 var wg sync.WaitGroup
@@ -26,7 +26,7 @@ func RunSimulation(draw bool, inputType int) {
 		go startSimUpdater(gameState, simDrawFrames)
 		startDrawer(gameState, simDrawFrames)
 	} else {
-		startSimUpdater(gameState, simCliFrames)
+		go startSimUpdater(gameState, simCliFrames)
 	}
 	wg.Wait()
 }
@@ -37,12 +37,12 @@ func startDrawer(gameState *sim.GameState, fps int64) {
 }
 
 func startSimUpdater(gameState *sim.GameState, fps int64) {
-	var sec int64 = 0
+	var frames int64 = 0
 	for range time.Tick(time.Second / time.Duration(fps)) {
-		if sec%fps == 0 {
-			fmt.Println("Sim Update Second", sec/fps)
+		if frames%(fps*3) == 0 {
+			fmt.Println("Simulation Frames Calculated:", frames)
 		}
-		sec++
+		frames++
 		sim.Update(gameState)
 	}
 }

@@ -1,34 +1,49 @@
 package renderer
 
 import (
+	"fmt"
 	"image/color"
 	"log"
+	"math"
 
 	"github.com/renatobrittoaraujo/rl/sim"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 const (
 	screenWidth           = 1000
 	screenHeight          = 700
-	groundSlicePercentage = 0.15
+	groundSlicePercentage = 0.15            // How much the dirt area occupy of the total space
+	grassSlicePercentage  = 0.03            // How much grass occupy of the dirt area
+	minGroundDist         = 140             // This variable is an adjustment so the rocket touches the ground
+	rocketScaleAdjust     = 10              // The higher this number, the less the rocket reduces in scale as it goes high
+	rocketSizeAdjust      = 0.3             // Scales rocket size to fit screen
+	maxXLag               = screenWidth / 3 // Drawn rocket position lags a little from actual position, as a visual feature
 )
 
 var (
-	gameState          *sim.GameState
-	rocketImage, _     = ebiten.NewImage(sim.RocketLenght, sim.RocketLenght*10, ebiten.FilterDefault)
+	gameState *sim.GameState
+
+	// The following variables are just dumb rectangles to represent all objects in screen
 	backgroundImage, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
 	groundImage, _     = ebiten.NewImage(screenWidth, screenHeight*groundSlicePercentage, ebiten.FilterDefault)
+	grassImage, _      = ebiten.NewImage(screenWidth, screenHeight*grassSlicePercentage, ebiten.FilterDefault)
+	rocketImage, _     = ebiten.NewImage(sim.RocketLenght, sim.RocketLenght*10, ebiten.FilterDefault)
+
+	// Holds last X position to create a lagging sensation on X axis of change
+	lastX float32 = 0
 )
 
 // Game holds rendering state for game
 type Game struct{}
 
 func init() {
-	rocketImage.Fill(color.White)
-	groundImage.Fill(color.RGBA{153, 102, 0, 255})
-	backgroundImage.Fill(color.RGBA{120, 120, 240, 255})
+	rocketImage.Fill(color.White)                        // Bet you can't guess this color
+	groundImage.Fill(color.RGBA{153, 102, 0, 255})       // Brownish
+	grassImage.Fill(color.RGBA{100, 240, 100, 255})      // Greenish
+	backgroundImage.Fill(color.RGBA{120, 120, 240, 255}) // Blueish
 }
 
 // DrawSim start the drawing of the simulation
@@ -37,6 +52,7 @@ func DrawSim(gs *sim.GameState, fps int64) {
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Rocket Lander")
 	ebiten.SetMaxTPS(int(fps))
+	ebiten.SetRunnableOnUnfocused(true)
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
 	}
@@ -53,12 +69,26 @@ func (g *Game) Update(screen *ebiten.Image) error {
 }
 
 // Draw to screen, required by ebiten interface
+// Drawn in order of priority in screen
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(backgroundImage, &ebiten.DrawImageOptions{})
+
 	groundPos := ebiten.GeoM{}
 	groundPos.Translate(0, screenHeight*(1-groundSlicePercentage))
 	screen.DrawImage(groundImage, &ebiten.DrawImageOptions{GeoM: groundPos})
+
+	grassPos := ebiten.GeoM{}
+	grassPos.Scale(1, float64(rocketScale()))
+	grassPos.Translate(0, screenHeight*(1-groundSlicePercentage))
+	screen.DrawImage(grassImage, &ebiten.DrawImageOptions{GeoM: grassPos})
+
 	screen.DrawImage(rocketImage, rocketDrawData())
+
+	msg := fmt.Sprintf(" FPS: %0.0f\n Rocket Height: %0.2f",
+		ebiten.CurrentTPS(),
+		gameState.RocketPosition.Y)
+
+	ebitenutil.DebugPrint(screen, msg)
 }
 
 // RocketScale returns a scale of rocket size, ranging from (0.0, 1.0]
@@ -66,19 +96,44 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // the highest when rocket lies on the lowest position possible (0)
 // and going down as rocket position is higher
 func rocketScale() float32 {
-	return (sim.Height * 3.4) / (gameState.RocketPosition.Y + (sim.Height * 3.4))
+	return (sim.RocketLenght * rocketScaleAdjust) / (gameState.RocketPosition.Y + (sim.RocketLenght * rocketScaleAdjust))
 }
 
 var rot float32
-var vpos float32 = 10
 
 func rocketDrawData() *ebiten.DrawImageOptions {
 	pos := ebiten.GeoM{}
-	rot = rot + 3.1415/100
+
+	// rot = rot + 3.1415/100
+	// Adjusts length of rocket to fit screen
+	rocketAdjustedLength := sim.RocketLenght * rocketSizeAdjust
+
+	// Gets rocket scale to represent a high flying rocket
 	rs := float64(rocketScale())
+	rs *= rocketSizeAdjust
 	pos.Scale(rs, rs)
+
+	// Change center of image to the middle of the rocket instead of the top left
+	pos.Translate(-rocketAdjustedLength/2, -rocketAdjustedLength*5)
+	// Then rotates it to the current rocket rotation
 	pos.Rotate(float64(rot))
-	pos.Translate(screenWidth/2, float64(screenHeight/2-gameState.RocketPosition.Y))
+
+	// Now sets the rocket position somewhere in screen
+
+	// X position is affected by a visual 'lag' when rocket's x position changes, so the
+	// watcher understands that the rocket is going left or right
+	lag := gameState.RocketPosition.X - lastX
+	if math.Abs(float64(lag)) > maxXLag {
+		lag *= float32(maxXLag / math.Abs(float64(lag)))
+	}
+	xpos := screenWidth/2 + lag
+	lastX += (gameState.RocketPosition.X - lastX) / 2
+
+	// Y position increases ever more slowly as rocket increase size, it gives the impression
+	// that the rocket is moving very far away from the ground, without ever leaving the screen
+	ypos := screenHeight/2 + minGroundDist - gameState.RocketPosition.Y*float32(rs)
+	pos.Translate(float64(xpos), float64(ypos))
+
 	return &ebiten.DrawImageOptions{
 		GeoM: pos,
 	}
