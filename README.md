@@ -1,6 +1,12 @@
 # RocketLander
 2D Go simulation about landing a rocket SpaceX style using AI
 
+## Running
+
+```
+go install;$GOBIN/rl [args]
+```
+
 References:
 
 #### Rocket Lander
