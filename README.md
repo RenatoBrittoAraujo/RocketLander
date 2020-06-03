@@ -1,7 +1,17 @@
 # RocketLander
 2D Go simulation about landing a rocket SpaceX style using AI
 
-References:
+## Links
+
+[Trello Backlog](https://trello.com/b/T70DyPsA/rocketlander)
+
+## Running
+
+```
+go install;$GOBIN/rl [args]
+```
+
+## References:
 
 #### Rocket Lander
 
