@@ -20,7 +20,7 @@ var wg sync.WaitGroup
 
 // RunSimulation receives draw bool and run sim with screen drawing or on CLI
 func RunSimulation(draw bool, inputType int) {
-	gameState := sim.CreateGameState()
+	gameState := sim.CreateRocket()
 	wg.Add(1)
 	if draw {
 		go startSimUpdater(gameState, simDrawFrames)
@@ -31,18 +31,18 @@ func RunSimulation(draw bool, inputType int) {
 	wg.Wait()
 }
 
-func startDrawer(gameState *sim.GameState, fps int64) {
+func startDrawer(gameState *sim.Rocket, fps int64) {
 	defer wg.Done()
 	renderer.DrawSim(gameState, fps)
 }
 
-func startSimUpdater(gameState *sim.GameState, fps int64) {
+func startSimUpdater(rocket *sim.Rocket, fps int64) {
 	var frames int64 = 0
 	for range time.Tick(time.Second / time.Duration(fps)) {
 		if frames%(fps*3) == 0 {
 			fmt.Println("Simulation Frames Calculated:", frames)
 		}
 		frames++
-		sim.Update(gameState)
+		sim.UpdateRocket(rocket)
 	}
 }

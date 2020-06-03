@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	gameState *sim.GameState
+	rocket *sim.Rocket
 
 	// The following variables are just dumb rectangles to represent all objects in screen
 	backgroundImage, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
@@ -47,8 +47,8 @@ func init() {
 }
 
 // DrawSim start the drawing of the simulation
-func DrawSim(gs *sim.GameState, fps int64) {
-	gameState = gs
+func DrawSim(gs *sim.Rocket, fps int64) {
+	rocket = gs
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Rocket Lander")
 	ebiten.SetMaxTPS(int(fps))
@@ -86,7 +86,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	msg := fmt.Sprintf(" FPS: %0.0f\n Rocket Height: %0.2f",
 		ebiten.CurrentTPS(),
-		gameState.RocketPosition.Y)
+		rocket.Position.Y)
 
 	ebitenutil.DebugPrint(screen, msg)
 }
@@ -96,7 +96,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // the highest when rocket lies on the lowest position possible (0)
 // and going down as rocket position is higher
 func rocketScale() float32 {
-	return (sim.RocketLenght * rocketScaleAdjust) / (gameState.RocketPosition.Y + (sim.RocketLenght * rocketScaleAdjust))
+	return (sim.RocketLenght * rocketScaleAdjust) / (rocket.Position.Y + (sim.RocketLenght * rocketScaleAdjust))
 }
 
 var rot float32
@@ -122,16 +122,16 @@ func rocketDrawData() *ebiten.DrawImageOptions {
 
 	// X position is affected by a visual 'lag' when rocket's x position changes, so the
 	// watcher understands that the rocket is going left or right
-	lag := gameState.RocketPosition.X - lastX
+	lag := rocket.Position.X - lastX
 	if math.Abs(float64(lag)) > maxXLag {
 		lag *= float32(maxXLag / math.Abs(float64(lag)))
 	}
 	xpos := screenWidth/2 + lag
-	lastX += (gameState.RocketPosition.X - lastX) / 2
+	lastX += (rocket.Position.X - lastX) / 2
 
 	// Y position increases ever more slowly as rocket increase size, it gives the impression
 	// that the rocket is moving very far away from the ground, without ever leaving the screen
-	ypos := screenHeight/2 + minGroundDist - gameState.RocketPosition.Y*float32(rs)
+	ypos := screenHeight/2 + minGroundDist - rocket.Position.Y*float32(rs)
 	pos.Translate(float64(xpos), float64(ypos))
 
 	return &ebiten.DrawImageOptions{
