@@ -27,8 +27,5 @@ func main() {
 			panic("Invalid CLI argument")
 		}
 	}
-	if trainMode && inputMode != input.AIInput {
-		panic("Training must be done with AI")
-	}
 	manager.RunSimulation(!trainMode, inputMode)
 }

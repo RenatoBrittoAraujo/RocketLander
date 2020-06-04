@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/renatobrittoaraujo/rl/input"
 	"github.com/renatobrittoaraujo/rl/renderer"
 	"github.com/renatobrittoaraujo/rl/sim"
 )
@@ -20,29 +21,37 @@ var wg sync.WaitGroup
 
 // RunSimulation receives draw bool and run sim with screen drawing or on CLI
 func RunSimulation(draw bool, inputType int) {
-	gameState := sim.CreateRocket()
+	rocket := sim.CreateRocket()
+	inputManager, err := input.CreateInput(inputType)
+	rocketChannel := make(chan *sim.Rocket)
+	if err {
+		panic("Input \"" + input.InputString[inputType] + "\" has not been initalized correctly")
+	}
 	wg.Add(1)
 	if draw {
-		go startSimUpdater(gameState, simDrawFrames)
-		startDrawer(gameState, simDrawFrames)
+		go startSimUpdater(rocket, simDrawFrames, inputManager, rocketChannel)
+		renderer.DrawSim(rocketChannel, simDrawFrames)
+		wg.Done()
 	} else {
-		go startSimUpdater(gameState, simCliFrames)
+		startSimUpdater(rocket, simCliFrames, inputManager, rocketChannel)
+		wg.Done()
 	}
 	wg.Wait()
 }
 
-func startDrawer(gameState *sim.Rocket, fps int64) {
-	defer wg.Done()
-	renderer.DrawSim(gameState, fps)
-}
-
-func startSimUpdater(rocket *sim.Rocket, fps int64) {
+func startSimUpdater(rocket *sim.Rocket, fps int64, inputManager input.Manager, channel chan *sim.Rocket) {
 	var frames int64 = 0
 	for range time.Tick(time.Second / time.Duration(fps)) {
-		if frames%(fps*3) == 0 {
+		if frames%(fps*5) == 0 {
 			fmt.Println("Simulation Frames Calculated:", frames)
 		}
 		frames++
+		inputManager.UpdateSim(rocket)
 		sim.UpdateRocket(rocket)
+		go emmitRocketState(channel, rocket)
 	}
+}
+
+func emmitRocketState(channel chan *sim.Rocket, rocket *sim.Rocket) {
+	channel <- rocket
 }

@@ -5,7 +5,9 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"time"
 
+	"github.com/renatobrittoaraujo/rl/helpers"
 	"github.com/renatobrittoaraujo/rl/sim"
 
 	"github.com/hajimehoshi/ebiten"
@@ -24,7 +26,11 @@ const (
 )
 
 var (
-	rocket *sim.Rocket
+	rocketChannel    chan *sim.Rocket
+	rocket           *sim.Rocket
+	lastRecordedTime time.Time
+	frames           int
+	lastFPS          int
 
 	// The following variables are just dumb rectangles to represent all objects in screen
 	backgroundImage, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
@@ -47,8 +53,10 @@ func init() {
 }
 
 // DrawSim start the drawing of the simulation
-func DrawSim(gs *sim.Rocket, fps int64) {
-	rocket = gs
+func DrawSim(rc chan *sim.Rocket, fps int64) {
+	lastRecordedTime = time.Now()
+	lastFPS = int(fps)
+	rocketChannel = rc
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Rocket Lander")
 	ebiten.SetMaxTPS(int(fps))
@@ -68,9 +76,21 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	return nil
 }
 
+func calcFPS() {
+	frames++
+	if helpers.SubtractTimeInSeconds(lastRecordedTime, time.Now()) >= 1 {
+		lastFPS = frames
+		frames = 0
+		lastRecordedTime = time.Now()
+	}
+}
+
 // Draw to screen, required by ebiten interface
 // Drawn in order of priority in screen
 func (g *Game) Draw(screen *ebiten.Image) {
+	calcFPS()
+
+	rocket = <-rocketChannel
 	screen.DrawImage(backgroundImage, &ebiten.DrawImageOptions{})
 
 	groundPos := ebiten.GeoM{}
@@ -84,9 +104,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(rocketImage, rocketDrawData())
 
-	msg := fmt.Sprintf(" FPS: %0.0f\n Rocket Height: %0.2f",
-		ebiten.CurrentTPS(),
-		rocket.Position.Y)
+	msg := fmt.Sprintf(" FPS: %v\n Rocket Height: %0.2f\n Rocket Thrust: %0.2f",
+		lastFPS,
+		rocket.Position.Y,
+		rocket.ThrustPercentage())
 
 	ebitenutil.DebugPrint(screen, msg)
 }
