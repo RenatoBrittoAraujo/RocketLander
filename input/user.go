@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	thrustChangePerSecond = 1.5
+	thrustChangePerSecond = 0.015
 )
 
 type user struct{}
@@ -16,8 +16,8 @@ var thrust float32 = 0
 func (user user) UpdateSim(rocket *sim.Rocket) {
 	if ebiten.IsKeyPressed(ebiten.KeyShift) {
 		thrust += thrustChangePerSecond
-		if thrust > 100 {
-			thrust = 100
+		if thrust > 1 {
+			thrust = 1
 		}
 		rocket.SetThrust(thrust)
 	}
@@ -32,6 +32,6 @@ func (user user) UpdateSim(rocket *sim.Rocket) {
 		rocket.JetLeft()
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		rocket.JetLeft()
+		rocket.JetRight()
 	}
 }

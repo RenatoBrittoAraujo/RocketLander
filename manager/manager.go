@@ -18,40 +18,53 @@ const (
 )
 
 var wg sync.WaitGroup
+var rocketChannel chan *sim.Rocket
 
-// RunSimulation receives draw bool and run sim with screen drawing or on CLI
-func RunSimulation(draw bool, inputType int) {
+// StartSimulationDriver receives draw bool and run sim with screen drawing or on CLI
+func StartSimulationDriver(draw bool, inputType int) {
 	rocket := sim.CreateRocket()
 	inputManager, err := input.CreateInput(inputType)
-	rocketChannel := make(chan *sim.Rocket)
+	rocketChannel = nil
 	if err {
 		panic("Input \"" + input.InputString[inputType] + "\" has not been initalized correctly")
 	}
 	wg.Add(1)
 	if draw {
-		go startSimUpdater(rocket, simDrawFrames, inputManager, rocketChannel)
+		rocketChannel = make(chan *sim.Rocket)
+		go startSimulation(rocket, simDrawFrames, inputManager)
 		renderer.DrawSim(rocketChannel, simDrawFrames)
 		wg.Done()
 	} else {
-		startSimUpdater(rocket, simCliFrames, inputManager, rocketChannel)
+		startSimulation(rocket, simCliFrames, inputManager)
 		wg.Done()
 	}
+	close(rocketChannel)
 	wg.Wait()
 }
 
-func startSimUpdater(rocket *sim.Rocket, fps int64, inputManager input.Manager, channel chan *sim.Rocket) {
+func startSimulation(rocket *sim.Rocket, fps int64, inputManager input.Manager) {
 	var frames int64 = 0
 	for range time.Tick(time.Second / time.Duration(fps)) {
 		if frames%(fps*5) == 0 {
 			fmt.Println("Simulation Frames Calculated:", frames)
 		}
 		frames++
-		inputManager.UpdateSim(rocket)
-		sim.UpdateRocket(rocket)
-		go emmitRocketState(channel, rocket)
+		if rocket.IsAscending() && false {
+			rocket.Ascend(1)
+		} else {
+			inputManager.UpdateSim(rocket)
+		}
+		rocket.Update()
+		if rocketChannel != nil {
+			go emmitRocketState(rocket)
+		}
+		// if sim.DetectGroundCollision(rocket) {
+		// 	close(rocketChannel)
+		// 	return
+		// }
 	}
 }
 
-func emmitRocketState(channel chan *sim.Rocket, rocket *sim.Rocket) {
-	channel <- rocket
+func emmitRocketState(rocket *sim.Rocket) {
+	rocketChannel <- rocket
 }

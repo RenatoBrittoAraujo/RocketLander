@@ -27,5 +27,5 @@ func main() {
 			panic("Invalid CLI argument")
 		}
 	}
-	manager.RunSimulation(!trainMode, inputMode)
+	manager.StartSimulationDriver(!trainMode, inputMode)
 }

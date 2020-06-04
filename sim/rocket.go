@@ -16,9 +16,10 @@ const (
 	wetMass         = 439000
 	// Constants related purely with simulation
 	ascentTime                          = 5 // seconds
-	maxEngineOnTime                     = 120
-	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // Kg
+	maxEngineOnTime                     = 100
+	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg
 	rcsRotationTorque                   = 10.2                                  // netwon meters
+	physicsUpdateRate                   = 60
 )
 
 // Rocket holds all relevant simulation data
@@ -35,10 +36,11 @@ type Rocket struct {
 	Direction             float32
 	SpeedVector           Vector
 	RotationTorque        float32
-	fuel                  float32
 	LiftoffTime           time.Time
-	thrust                float32
 	EngineStartsRemaining int
+	fuel                  float32
+	thrust                float32
+	controlsFree          bool
 }
 
 // ================ ROCKET STRUCT HELPERS
@@ -49,79 +51,98 @@ func CreateRocket() *Rocket {
 		LiftoffTime:           time.Now(),
 		EngineStartsRemaining: 100, // Falcon 9 v1.1 Merlin 1D's can ignite at least 3 times https://space.stackexchange.com/questions/13953/how-do-the-falcon-9-engines-re-ignite
 		fuel:                  wetMass - dryMass,
+		controlsFree:          false,
 	}
 }
 
-// UpdateRocket the rocket to it's next physics frame
-func UpdateRocket(rocket *Rocket) {
-	rocket.Position.Y++
-	if rocket.IsAscending() {
-		// fmt.Println("ASCENT TIME")
-		// Thrust max up
-		//
-	} else {
-		// fmt.Println("LANDING TIME")
-	}
-	if rocket.fuel <= 0.0 {
-		rocket.SetThrust(0)
-	}
+// Update the rocket to it's next physics frame
+func (r *Rocket) Update() {
+	r.Position.Y++
+	// r.applyGravity()
+	// r.updateVectors()
+	// r.updatePosition()
+	// r.updateDirection()
+	// r.update
+	r.tickFuel()
 }
+
+// func
+
+// func applyGravity(rocket *Rocket) {
+
+// }
 
 // ================ ROCKET EXTERNAL FUNCTIONS
 
+// Ascend changes ascetion parameters randomly given seed
+// Seed = 1 goes straight up
+// Any other seed generates random behaviour
+func (r *Rocket) Ascend(seed float64) {
+	r.SetThrust(1)
+}
+
 // IsAscending returns true whether rocket is in ascension
-func (g *Rocket) IsAscending() bool {
-	timeDiff := helpers.SubtractTimeInSeconds(g.LiftoffTime, time.Now())
-	return timeDiff < ascentTime
+func (r *Rocket) IsAscending() bool {
+	if r.controlsFree {
+		return false
+	}
+	timeDiff := helpers.SubtractTimeInSeconds(r.LiftoffTime, time.Now())
+	r.controlsFree = timeDiff >= ascentTime
+	return !r.controlsFree
 }
 
 // JetLeft turns on top left rcs jet (in relation to rocket's top)
-func (g *Rocket) JetLeft() {
-	g.RotationTorque += rcsRotationTorque
+func (r *Rocket) JetLeft() {
+	r.RotationTorque += rcsRotationTorque
 }
 
 // JetRight turns on top right rcs jet (in relation to rocket's top)
-func (g *Rocket) JetRight() {
-	g.RotationTorque -= rcsRotationTorque
+func (r *Rocket) JetRight() {
+	r.RotationTorque -= rcsRotationTorque
 }
 
-// SetThrust sets rocket thrust to a percentage from [0.0,100.0]
-func (g *Rocket) SetThrust(percentage float32) (err bool) {
-	if percentage < 0 || percentage > 100 {
+// SetThrust sets rocket thrust to a percentage from [0.0,1.0]
+func (r *Rocket) SetThrust(percentage float32) (err bool) {
+	if percentage < 0 || percentage > 1 {
 		panic("Input out of bounds for State.SetThrust (" + fmt.Sprintf("%0.1f", percentage) + ")")
 	}
-	if g.EngineStartsRemaining == 0 || g.fuel <= 0 {
+	if r.EngineStartsRemaining == 0 || r.fuel <= 0 {
 		return false
 	}
-	if g.thrust == 0 {
-		g.EngineStartsRemaining--
+	if r.thrust == 0 && percentage > 0 {
+		r.EngineStartsRemaining--
 	}
-	g.thrust = maxEngineThrust * (percentage / 100.0)
+	r.thrust = maxEngineThrust * percentage
 	return false
 }
 
-// FuelPercentage returns percentage from [0.0, 100.0] of fuel in rocket
-func (g *Rocket) FuelPercentage() float32 {
-	return g.fuel / (wetMass - dryMass)
+// FuelPercentage returns percentage from [0.0, 1.0] of fuel in rocket
+func (r *Rocket) FuelPercentage() float32 {
+	return r.fuel / (wetMass - dryMass)
 }
 
-// ThrustPercentage returns percentage from [0.0, 100.0] of thrust
-func (g *Rocket) ThrustPercentage() float32 {
-	return g.thrust / maxEngineThrust
+// ThrustPercentage returns percentage from [0.0, 1.0] of thrust
+func (r *Rocket) ThrustPercentage() float32 {
+	return r.thrust / maxEngineThrust
 }
 
 // ================ ROCKET INTERNAL FUNCTIONS
 
 // mass of rocket in kilograms
-func (g *Rocket) mass() float32 {
-	return g.fuel + dryMass
+func (r *Rocket) mass() float32 {
+	return r.fuel + dryMass
 }
 
 // tickFuel reduces fuel mass by current thurst amount
-func (g *Rocket) tickFuel() {
-	g.fuel -= g.ThrustPercentage() * fuelComsumptionPerSecondAtMaxThrust
-	if g.fuel < 0 {
-		g.fuel = 0
-		g.EngineStartsRemaining = 0
+func (r *Rocket) tickFuel() {
+	if r.fuel <= 0 {
+		r.fuel = 0
+		return
+	}
+	r.fuel -= r.ThrustPercentage() * (fuelComsumptionPerSecondAtMaxThrust / physicsUpdateRate)
+	if r.fuel <= 0 {
+		r.fuel = 0
+		r.EngineStartsRemaining = 0
+		r.thrust = 0
 	}
 }

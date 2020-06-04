@@ -104,12 +104,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(rocketImage, rocketDrawData())
 
-	msg := fmt.Sprintf(" FPS: %v\n Rocket Height: %0.2f\n Rocket Thrust: %0.2f",
+	ebitenutil.DebugPrint(screen, composePrint(rocket))
+}
+
+func composePrint(rocket *sim.Rocket) (msg string) {
+	msg = fmt.Sprintf(
+		" FPS: %v\n Rocket Height: %0.2f\n Rocket Thrust: %0.2f%%\n",
 		lastFPS,
 		rocket.Position.Y,
 		rocket.ThrustPercentage())
 
-	ebitenutil.DebugPrint(screen, msg)
+	msg += fmt.Sprintf(
+		" Rocket Fuel: %0.2f%%\n Ignitions Remaining: %v\n",
+		rocket.FuelPercentage(),
+		rocket.EngineStartsRemaining)
+
+	return
 }
 
 // RocketScale returns a scale of rocket size, ranging from (0.0, 1.0]
