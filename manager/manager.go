@@ -65,13 +65,14 @@ func startSimulation(rocket *sim.Rocket, fps int64, inputManager input.Manager) 
 			inputManager.UpdateSim(rocket)
 		}
 		rocket.Update()
+		if col := sim.DetectGroundCollision(rocket); col > 0 && !rocket.IsAscending() {
+			close(rocketChannel)
+			wg.Done()
+			break
+		}
 		if rocketChannel != nil {
 			go emmitRocketState(rocket)
 		}
-		// if sim.DetectGroundCollision(rocket) {
-		// 	close(rocketChannel)
-		// 	return
-		// }
 	}
 }
 

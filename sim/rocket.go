@@ -77,7 +77,6 @@ func (r *Rocket) Update() {
 	// Upkeep
 	r.tickFuel()
 
-	fmt.Println(r.SpeedVector)
 }
 
 func (r *Rocket) updateDirection() {
@@ -163,6 +162,42 @@ func (r *Rocket) FuelPercentage() float32 {
 // ThrustPercentage returns percentage from [0.0, 1.0] of thrust
 func (r *Rocket) ThrustPercentage() float32 {
 	return r.thrust / maxEngineThrust
+}
+
+// BoundingBox return the four points that define the rocket rectangle
+func (r *Rocket) BoundingBox() [4]Point {
+	x := r.Position.X
+	y := r.Position.Y
+	a := r.Direction - math.Pi/2
+	hor := float32(RocketLenght / 20.0)
+	ver := float32(RocketLenght / 2.0)
+	vecve := Vector{
+		X: ver * helpers.Sinf32(a),
+		Y: ver * helpers.Cosf32(a),
+	}
+	vecho := Vector{
+		X: hor * helpers.Sinf32(a-math.Pi/2.0),
+		Y: hor * helpers.Cosf32(a-math.Pi/2.0),
+	}
+	points := [4]Point{
+		{
+			X: x + vecve.X + vecho.X,
+			Y: y + vecve.Y + vecho.Y,
+		},
+		{
+			X: x + vecve.X - vecho.X,
+			Y: y + vecve.Y - vecho.Y,
+		},
+		{
+			X: x - vecve.X + vecho.X,
+			Y: y - vecve.Y + vecho.Y,
+		},
+		{
+			X: x - vecve.X - vecho.X,
+			Y: y - vecve.Y - vecho.Y,
+		},
+	}
+	return points
 }
 
 // ================ ROCKET INTERNAL FUNCTIONS
