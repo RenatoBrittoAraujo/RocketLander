@@ -19,7 +19,7 @@ const (
 	screenHeight          = 700
 	groundSlicePercentage = 0.15            // How much the dirt area occupy of the total space
 	grassSlicePercentage  = 0.03            // How much grass occupy of the dirt area
-	minGroundDist         = 140             // This variable is an adjustment so the rocket touches the ground
+	minGroundDist         = 160             // This variable is an adjustment so the rocket touches the ground
 	rocketScaleAdjust     = 10              // The higher this number, the less the rocket reduces in scale as it goes high
 	rocketSizeAdjust      = 0.3             // Scales rocket size to fit screen
 	maxXLag               = screenWidth / 3 // Drawn rocket position lags a little from actual position, as a visual feature
@@ -130,12 +130,9 @@ func rocketScale() float32 {
 	return (sim.RocketLenght * rocketScaleAdjust) / (rocket.Position.Y + (sim.RocketLenght * rocketScaleAdjust))
 }
 
-var rot float32
-
 func rocketDrawData() *ebiten.DrawImageOptions {
 	pos := ebiten.GeoM{}
 
-	// rot = rot + 3.1415/100
 	// Adjusts length of rocket to fit screen
 	rocketAdjustedLength := sim.RocketLenght * rocketSizeAdjust
 
@@ -147,7 +144,7 @@ func rocketDrawData() *ebiten.DrawImageOptions {
 	// Change center of image to the middle of the rocket instead of the top left
 	pos.Translate(-rocketAdjustedLength/2, -rocketAdjustedLength*5)
 	// Then rotates it to the current rocket rotation
-	pos.Rotate(float64(rot))
+	pos.Rotate(float64(rocket.Direction - math.Pi/2))
 
 	// Now sets the rocket position somewhere in screen
 

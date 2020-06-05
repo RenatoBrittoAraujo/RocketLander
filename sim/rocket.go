@@ -2,6 +2,7 @@ package sim
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/renatobrittoaraujo/rl/helpers"
@@ -19,11 +20,10 @@ const (
 	maxEngineOnTime                     = 100
 	physicsUpdateRate                   = 1.0 / 60.0                            // per second
 	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg
-	rcsAngularMomentumChangePerTick     = 0.0001                                // kg m^2 s^-1
+	rcsAngularMomentumChangePerTick     = 0.001                                 // kg m^2 s^-1
 	rotation
 	// Actual physics constants
-	g  = 9.8
-	pi = 3.1415926
+	g = 9.8
 )
 
 // Rocket holds all relevant simulation data
@@ -52,11 +52,12 @@ type Rocket struct {
 // CreateRocket creates and returns an instace of rocket
 func CreateRocket() *Rocket {
 	return &Rocket{
+		Position:              Point{X: 0, Y: RocketLenght / 2},
 		LiftoffTime:           time.Now(),
 		EngineStartsRemaining: 3, // Falcon 9 v1.1 Merlin 1D's can ignite at least 3 times https://space.stackexchange.com/questions/13953/how-do-the-falcon-9-engines-re-ignite
 		fuel:                  wetMass - dryMass,
 		controlsFree:          false,
-		Direction:             pi / 2.0,
+		Direction:             math.Pi / 2.0,
 	}
 }
 
@@ -71,7 +72,7 @@ func (r *Rocket) Update() {
 	// Rocket position
 	r.applyGravity()
 	r.addThrust()
-	r.updatePosition()
+	// r.updatePosition()
 
 	// Upkeep
 	r.tickFuel()
@@ -103,11 +104,7 @@ func (r *Rocket) applyGravity() {
 }
 
 func (r *Rocket) addThrust() {
-	fmt.Println("ANG:", r.Direction*180/pi)
 	module := r.thrust * physicsUpdateRate / r.mass()
-	fmt.Println("THRUST MODULE:", module)
-	fmt.Println("CHANGE X:", helpers.Cosf32(r.Direction)*module)
-	fmt.Println("CHANGE Y:", helpers.Sinf32(r.Direction)*module)
 	r.SpeedVector.X += helpers.Cosf32(r.Direction) * module
 	r.SpeedVector.Y += helpers.Sinf32(r.Direction) * module
 }
@@ -135,12 +132,12 @@ func (r *Rocket) IsAscending() bool {
 
 // JetLeft turns on top left rcs jet (in relation to rocket's top)
 func (r *Rocket) JetLeft() {
-	r.AngularMomentum += rcsAngularMomentumChangePerTick
+	r.AngularMomentum -= rcsAngularMomentumChangePerTick
 }
 
 // JetRight turns on top right rcs jet (in relation to rocket's top)
 func (r *Rocket) JetRight() {
-	r.AngularMomentum -= rcsAngularMomentumChangePerTick
+	r.AngularMomentum += rcsAngularMomentumChangePerTick
 }
 
 // SetThrust sets rocket thrust to a percentage from [0.0,1.0]
