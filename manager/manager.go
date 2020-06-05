@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hajimehoshi/ebiten"
 	"github.com/renatobrittoaraujo/rl/input"
 	"github.com/renatobrittoaraujo/rl/renderer"
 	"github.com/renatobrittoaraujo/rl/sim"
@@ -29,17 +30,26 @@ func StartSimulationDriver(draw bool, inputType int) {
 		panic("Input \"" + input.InputString[inputType] + "\" has not been initalized correctly")
 	}
 	wg.Add(1)
+	go func() {
+		for range time.Tick(time.Second / time.Duration(60)) {
+			if ebiten.IsKeyPressed(ebiten.KeyR) {
+				wg.Done()
+				break
+			}
+		}
+	}()
 	if draw {
 		rocketChannel = make(chan *sim.Rocket)
-		go startSimulation(rocket, simDrawFrames, inputManager)
+		go startSimulation(rocket, simDrawFrames*5, inputManager)
 		renderer.DrawSim(rocketChannel, simDrawFrames)
 		wg.Done()
 	} else {
 		startSimulation(rocket, simCliFrames, inputManager)
 		wg.Done()
 	}
-	close(rocketChannel)
 	wg.Wait()
+	close(rocketChannel)
+	StartSimulationDriver(draw, inputType)
 }
 
 func startSimulation(rocket *sim.Rocket, fps int64, inputManager input.Manager) {
