@@ -19,14 +19,15 @@ import (
 )
 
 const (
-	screenWidth           = 1000
-	screenHeight          = 700
+	screenWidth           = 1280
+	screenHeight          = 720
 	groundSlicePercentage = 0.15            // How much the dirt area occupy of the total space
 	grassSlicePercentage  = 0.03            // How much grass occupy of the dirt area
-	minGroundDist         = 160             // This variable is an adjustment so the rocket touches the ground
+	minGroundDist         = 168             // This variable is an adjustment so the rocket touches the ground
 	rocketScaleAdjust     = 10              // The higher this number, the less the rocket reduces in scale as it goes high
 	rocketSizeAdjust      = 0.3             // Scales rocket size to fit screen
 	maxXLag               = screenWidth / 3 // Drawn rocket position lags a little from actual position, as a visual feature
+	frameFeedTolerance    = 0.500           // Seconds for how much time module waits after stopping receiving frames to declare end of simulation
 )
 
 var (
@@ -37,16 +38,21 @@ var (
 	lastFPS          int
 
 	// The following variables are just dumb rectangles to represent all objects in screen
-	backgroundImage, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
-	groundImage, _     = ebiten.NewImage(screenWidth, screenHeight*groundSlicePercentage, ebiten.FilterDefault)
-	grassImage, _      = ebiten.NewImage(screenWidth, screenHeight*grassSlicePercentage, ebiten.FilterDefault)
-	rocketImage, _     = ebiten.NewImage(sim.RocketLenght, sim.RocketLenght*10, ebiten.FilterDefault)
+	height             float32 = screenHeight
+	width              float32 = screenWidth
+	backgroundImage, _         = ebiten.NewImage(int(width), int(height), ebiten.FilterDefault)
+	groundImage, _             = ebiten.NewImage(int(width), int(height*groundSlicePercentage), ebiten.FilterDefault)
+	grassImage, _              = ebiten.NewImage(int(width), int(height*grassSlicePercentage), ebiten.FilterDefault)
+	rocketImage, _             = ebiten.NewImage(sim.RocketLenght, sim.RocketLenght*10, ebiten.FilterDefault)
 
 	// Holds last X position to create a lagging sensation on X axis of change
 	lastX float32 = 0
 
 	// Holds loading message's font
 	mplusBigFont font.Face
+
+	// Holds last frame receive time
+	lastFrameTime time.Time
 )
 
 // Game holds rendering state for game
@@ -79,6 +85,7 @@ func DrawSim(rc chan *sim.Rocket, fps int64) {
 	ebiten.SetWindowTitle("Rocket Lander")
 	ebiten.SetMaxTPS(int(fps))
 	ebiten.SetRunnableOnUnfocused(true)
+	lastFrameTime = time.Now()
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
 	}
@@ -109,6 +116,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if rocketChannel != nil && len(rocketChannel) == cap(rocketChannel) {
 		rocket = <-rocketChannel
 		drawSimulation(screen)
+		lastFrameTime = time.Now()
+	} else if rocket != nil && helpers.SubtractTimeInSeconds(lastFrameTime, time.Now()) < frameFeedTolerance {
+		drawSimulation(screen)
 	} else {
 		drawLoadingScreen(screen)
 	}
@@ -131,10 +141,15 @@ func drawSimulation(screen *ebiten.Image) {
 	screen.DrawImage(rocketImage, rocketDrawData())
 
 	ebitenutil.DebugPrint(screen, composePrint(rocket))
+
+	if sim.DetectGroundCollision(rocket) > 0 && !rocket.IsAscending() {
+		text.Draw(screen, " COLISION DETECTED!", mplusBigFont, screenWidth/2-360, screenHeight/2-150, color.RGBA{255, 70, 70, 255})
+		text.Draw(screen, "PRESS SPACE TO RESET", mplusBigFont, screenWidth/2-360, screenHeight/2-50, color.White)
+	}
 }
 
 func drawLoadingScreen(screen *ebiten.Image) {
-	text.Draw(screen, "   LOADING\nSIMULATION", mplusBigFont, screenWidth/2-200, screenHeight/2-50, color.White)
+	text.Draw(screen, "PRESS SPACE\n  TO START", mplusBigFont, screenWidth/2-200, screenHeight/2-50, color.White)
 }
 
 func composePrint(rocket *sim.Rocket) (msg string) {

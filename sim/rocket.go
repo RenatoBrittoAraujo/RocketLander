@@ -16,7 +16,7 @@ const (
 	dryMass         = 28000   // kilograms
 	wetMass         = 439000
 	// Constants related purely with simulation
-	ascentTime                          = 1 // seconds
+	ascentTime                          = 5 // seconds
 	maxEngineOnTime                     = 100
 	physicsUpdateRate                   = 1.0 / 60.0                            // per second
 	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg

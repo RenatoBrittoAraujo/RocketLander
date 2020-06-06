@@ -63,6 +63,7 @@ func startSimulationInstance() {
 			if col := sim.DetectGroundCollision(rocket); col > 0 && !rocket.IsAscending() {
 				if draw {
 					waitKeyPress(ebiten.KeySpace, rocket)
+					time.Sleep(time.Millisecond * 120)
 				}
 				break
 			}
