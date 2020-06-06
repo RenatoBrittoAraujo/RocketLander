@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/renatobrittoaraujo/rl/appmanager"
 	"github.com/renatobrittoaraujo/rl/input"
-	"github.com/renatobrittoaraujo/rl/manager"
 )
 
 func main() {
@@ -27,5 +27,5 @@ func main() {
 			panic("Invalid CLI argument")
 		}
 	}
-	manager.StartSimulationDriver(!trainMode, inputMode)
+	appmanager.StartSimulationDriver(!trainMode, inputMode)
 }
