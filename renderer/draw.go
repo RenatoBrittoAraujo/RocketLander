@@ -7,11 +7,15 @@ import (
 	"math"
 	"time"
 
+	"github.com/golang/freetype/truetype"
 	"github.com/renatobrittoaraujo/rl/helpers"
 	"github.com/renatobrittoaraujo/rl/sim"
+	"golang.org/x/image/font"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/text"
 )
 
 const (
@@ -40,6 +44,9 @@ var (
 
 	// Holds last X position to create a lagging sensation on X axis of change
 	lastX float32 = 0
+
+	// Holds loading message's font
+	mplusBigFont font.Face
 )
 
 // Game holds rendering state for game
@@ -50,6 +57,17 @@ func init() {
 	groundImage.Fill(color.RGBA{153, 102, 0, 255})       // Brownish
 	grassImage.Fill(color.RGBA{100, 240, 100, 255})      // Greenish
 	backgroundImage.Fill(color.RGBA{120, 120, 240, 255}) // Blueish
+	tt, _ := truetype.Parse(fonts.MPlus1pRegular_ttf)
+	mplusBigFont = truetype.NewFace(tt, &truetype.Options{
+		Size:    48,
+		DPI:     100,
+		Hinting: font.HintingFull,
+	})
+}
+
+// Reset rendering
+func Reset(rc chan *sim.Rocket) {
+	rocketChannel = rc
 }
 
 // DrawSim start the drawing of the simulation
@@ -88,9 +106,17 @@ func calcFPS() {
 // Draw to screen, required by ebiten interface
 // Drawn in order of priority in screen
 func (g *Game) Draw(screen *ebiten.Image) {
+	if rocketChannel != nil && len(rocketChannel) == cap(rocketChannel) {
+		rocket = <-rocketChannel
+		drawSimulation(screen)
+	} else {
+		drawLoadingScreen(screen)
+	}
+}
+
+func drawSimulation(screen *ebiten.Image) {
 	calcFPS()
 
-	rocket = <-rocketChannel
 	screen.DrawImage(backgroundImage, &ebiten.DrawImageOptions{})
 
 	groundPos := ebiten.GeoM{}
@@ -105,6 +131,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(rocketImage, rocketDrawData())
 
 	ebitenutil.DebugPrint(screen, composePrint(rocket))
+}
+
+func drawLoadingScreen(screen *ebiten.Image) {
+	text.Draw(screen, "   LOADING\nSIMULATION", mplusBigFont, screenWidth/2-200, screenHeight/2-50, color.White)
 }
 
 func composePrint(rocket *sim.Rocket) (msg string) {

@@ -1,8 +1,6 @@
 package manager
 
 import (
-	"fmt"
-	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
@@ -18,64 +16,78 @@ const (
 	simCliFrames = 1000
 )
 
-var wg sync.WaitGroup
-var rocketChannel chan *sim.Rocket
+var (
+	rocketChannel chan *sim.Rocket
+	inputType     int
+	draw          bool
+	loaded        bool
+	inputManager  input.Manager
+)
 
 // StartSimulationDriver receives draw bool and run sim with screen drawing or on CLI
-func StartSimulationDriver(draw bool, inputType int) {
-	rocket := sim.CreateRocket()
-	inputManager, err := input.CreateInput(inputType)
-	rocketChannel = nil
+func StartSimulationDriver(argdraw bool, arginputType int) {
+	inputType = arginputType
+	draw = argdraw
+	linputManager, err := input.CreateInput(inputType)
 	if err {
 		panic("Input \"" + input.InputString[inputType] + "\" has not been initalized correctly")
 	}
-	wg.Add(1)
-	go func() {
-		for range time.Tick(time.Second / time.Duration(60)) {
-			if ebiten.IsKeyPressed(ebiten.KeyR) {
-				wg.Done()
+	inputManager = linputManager
+	rocketChannel = make(chan *sim.Rocket, 1)
+	go startSimulationInstance()
+	renderer.DrawSim(rocketChannel, simDrawFrames)
+}
+
+func startSimulationInstance() {
+	for {
+		rocket := sim.CreateRocket()
+		var fps int
+		if draw {
+			fps = simDrawFrames * 5
+		} else {
+			fps = simCliFrames
+		}
+		if draw {
+			waitKeyPress(ebiten.KeySpace, nil)
+		}
+		for range time.Tick(time.Second / time.Duration(fps)) {
+			if draw && ebiten.IsKeyPressed(ebiten.KeyR) {
+				break
+			}
+			if rocket.IsAscending() && false {
+				rocket.Ascend(1)
+			} else {
+				inputManager.UpdateSim(rocket)
+			}
+			rocket.Update()
+			if col := sim.DetectGroundCollision(rocket); col > 0 && !rocket.IsAscending() {
+				if draw {
+					waitKeyPress(ebiten.KeySpace, rocket)
+				}
+				break
+			}
+			if len(rocketChannel) < cap(rocketChannel) {
+				rocketChannel <- rocket
+			}
+		}
+	}
+}
+
+func waitKeyPress(key ebiten.Key, rocket *sim.Rocket) {
+	if rocket != nil {
+		for range time.Tick(time.Second / simDrawFrames) {
+			if len(rocketChannel) < cap(rocketChannel) {
+				rocketChannel <- rocket
+			}
+			if ebiten.IsKeyPressed(key) {
 				break
 			}
 		}
-	}()
-	if draw {
-		rocketChannel = make(chan *sim.Rocket)
-		go startSimulation(rocket, simDrawFrames*5, inputManager)
-		renderer.DrawSim(rocketChannel, simDrawFrames)
-		wg.Done()
 	} else {
-		startSimulation(rocket, simCliFrames, inputManager)
-		wg.Done()
-	}
-	wg.Wait()
-	close(rocketChannel)
-	StartSimulationDriver(draw, inputType)
-}
-
-func startSimulation(rocket *sim.Rocket, fps int64, inputManager input.Manager) {
-	var frames int64 = 0
-	for range time.Tick(time.Second / time.Duration(fps)) {
-		if frames%(fps*5) == 0 {
-			fmt.Println("Simulation Frames Calculated:", frames)
-		}
-		frames++
-		if rocket.IsAscending() && false {
-			rocket.Ascend(1)
-		} else {
-			inputManager.UpdateSim(rocket)
-		}
-		rocket.Update()
-		if col := sim.DetectGroundCollision(rocket); col > 0 && !rocket.IsAscending() {
-			close(rocketChannel)
-			wg.Done()
-			break
-		}
-		if rocketChannel != nil {
-			go emmitRocketState(rocket)
+		for range time.Tick(time.Second / simDrawFrames) {
+			if ebiten.IsKeyPressed(key) {
+				break
+			}
 		}
 	}
-}
-
-func emmitRocketState(rocket *sim.Rocket) {
-	rocketChannel <- rocket
 }

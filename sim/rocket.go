@@ -16,7 +16,7 @@ const (
 	dryMass         = 28000   // kilograms
 	wetMass         = 439000
 	// Constants related purely with simulation
-	ascentTime                          = 5 // seconds
+	ascentTime                          = 1 // seconds
 	maxEngineOnTime                     = 100
 	physicsUpdateRate                   = 1.0 / 60.0                            // per second
 	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg
@@ -53,8 +53,8 @@ type Rocket struct {
 func CreateRocket() *Rocket {
 	return &Rocket{
 		Position:              Point{X: 0, Y: RocketLenght / 2},
-		LiftoffTime:           time.Now(),
-		EngineStartsRemaining: 3, // Falcon 9 v1.1 Merlin 1D's can ignite at least 3 times https://space.stackexchange.com/questions/13953/how-do-the-falcon-9-engines-re-ignite
+		LiftoffTime:           time.Now(), // Simulation starts with liftoff, therefore this is appropriate
+		EngineStartsRemaining: 3,          // Falcon 9 v1.1 Merlin 1D's can ignite at least 3 times https://space.stackexchange.com/questions/13953/how-do-the-falcon-9-engines-re-ignite
 		fuel:                  wetMass - dryMass,
 		controlsFree:          false,
 		Direction:             math.Pi / 2.0,
@@ -72,40 +72,10 @@ func (r *Rocket) Update() {
 	// Rocket position
 	r.applyGravity()
 	r.addThrust()
-	// r.updatePosition()
+	r.updatePosition()
 
 	// Upkeep
 	r.tickFuel()
-
-}
-
-func (r *Rocket) updateDirection() {
-	r.AngularMomentum *= 0.99
-}
-
-func (r *Rocket) addRCS() {
-	r.Direction += r.AngularMomentum * physicsUpdateRate
-}
-
-func (r *Rocket) updatePosition() {
-	r.Position.X += r.SpeedVector.X * physicsUpdateRate
-	r.Position.Y += r.SpeedVector.Y * physicsUpdateRate
-	if r.Position.Y < 0 {
-		r.Position.Y = 0
-	}
-}
-
-func (r *Rocket) applyGravity() {
-	if r.Position.Y <= 0 {
-		return
-	}
-	r.SpeedVector.Y -= g * physicsUpdateRate
-}
-
-func (r *Rocket) addThrust() {
-	module := r.thrust * physicsUpdateRate / r.mass()
-	r.SpeedVector.X += helpers.Cosf32(r.Direction) * module
-	r.SpeedVector.Y += helpers.Sinf32(r.Direction) * module
 }
 
 // ================ ROCKET EXTERNAL FUNCTIONS
@@ -219,4 +189,44 @@ func (r *Rocket) tickFuel() {
 		r.EngineStartsRemaining = 0
 		r.thrust = 0
 	}
+}
+
+// Adds a little "friction" to rockets rotation, to simulate aerodinamics just a little
+func (r *Rocket) updateDirection() {
+	r.AngularMomentum *= 0.99
+}
+
+// Updates angle rocket points based on it's angular momentum
+func (r *Rocket) addRCS() {
+	r.Direction += r.AngularMomentum * physicsUpdateRate
+}
+
+// Updates rocket position based on it's speed vector
+func (r *Rocket) updatePosition() {
+	r.Position.X += r.SpeedVector.X * physicsUpdateRate
+	r.Position.Y += r.SpeedVector.Y * physicsUpdateRate
+	if r.Position.Y < 0 {
+		r.Position.Y = 0
+	}
+}
+
+// Applies G force on rocket (also important to remember as a
+// small touch to the simulation that the gravity acceleration
+// ticks down very slowly as you go up and away from earth, so
+// much so that for simulation aspects, let's pretend it
+// remains constant)
+// It does not apply the force if rocket is on the ground
+func (r *Rocket) applyGravity() {
+	if DetectGroundCollision(r) >= 2 {
+		r.SpeedVector.Y = 0
+		return
+	}
+	r.SpeedVector.Y -= g * physicsUpdateRate
+}
+
+// Adds to speed vector based on current engine's thrust
+func (r *Rocket) addThrust() {
+	module := r.thrust * physicsUpdateRate / r.mass()
+	r.SpeedVector.X += helpers.Cosf32(r.Direction) * module
+	r.SpeedVector.Y += helpers.Sinf32(r.Direction) * module
 }
