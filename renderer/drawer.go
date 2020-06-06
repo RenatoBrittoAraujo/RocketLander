@@ -1,22 +1,53 @@
 package renderer
 
 import (
-	"fmt"
 	"image/color"
 	"math"
-	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/text"
-	"github.com/renatobrittoaraujo/rl/helpers"
 	"github.com/renatobrittoaraujo/rl/sim"
 )
+
+const (
+	groundSlicePercentage = 0.15            // How much the dirt area occupy of the total space
+	grassSlicePercentage  = 0.03            // How much grass occupy of the dirt area
+	minGroundDist         = 168             // This variable is an adjustment so the rocket touches the ground
+	rocketScaleAdjust     = 10              // The higher this number, the less the rocket reduces in scale as it goes high
+	rocketSizeAdjust      = 0.3             // Scales rocket size to fit screen
+	maxXLag               = screenWidth / 3 // Drawn rocket position lags a little from actual position, as a visual feature
+)
+
+var (
+	height float32 = screenHeight
+	width  float32 = screenWidth
+
+	// The following variables are just dumb rectangles to represent all objects in screen
+	backgroundImage, _ = ebiten.NewImage(int(width), int(height), ebiten.FilterDefault)
+	groundImage, _     = ebiten.NewImage(int(width), int(height*groundSlicePercentage), ebiten.FilterDefault)
+	grassImage, _      = ebiten.NewImage(int(width), int(height*grassSlicePercentage), ebiten.FilterDefault)
+	rocketImage, _     = ebiten.NewImage(sim.RocketLenght, sim.RocketLenght*10, ebiten.FilterDefault)
+
+	// Holds last X position to create a lagging sensation on X axis of change
+	lastX float32 = 0
+)
+
+func init() {
+	// Set color of rectangles
+	rocketImage.Fill(color.White)                        // Bet you can't guess this color
+	groundImage.Fill(color.RGBA{153, 102, 0, 255})       // Brownish
+	grassImage.Fill(color.RGBA{100, 240, 100, 255})      // Greenish
+	backgroundImage.Fill(color.RGBA{120, 120, 240, 255}) // Blueish
+
+}
 
 func drawSimulation(screen *ebiten.Image) {
 	calcFPS()
 
 	screen.DrawImage(backgroundImage, &ebiten.DrawImageOptions{})
+
+	drawParallax(screen)
 
 	groundPos := ebiten.GeoM{}
 	groundPos.Translate(0, screenHeight*(1-groundSlicePercentage))
@@ -35,44 +66,6 @@ func drawSimulation(screen *ebiten.Image) {
 	} else {
 		ebitenutil.DebugPrint(screen, composePrint(rocket))
 	}
-}
-
-func drawLoadingScreen(screen *ebiten.Image) {
-	screen.DrawImage(backgroundImage, &ebiten.DrawImageOptions{})
-
-	groundPos := ebiten.GeoM{}
-	groundPos.Translate(0, screenHeight*(1-groundSlicePercentage))
-	screen.DrawImage(groundImage, &ebiten.DrawImageOptions{GeoM: groundPos})
-
-	grassPos := ebiten.GeoM{}
-	grassPos.Translate(0, screenHeight*(1-groundSlicePercentage))
-	screen.DrawImage(grassImage, &ebiten.DrawImageOptions{GeoM: grassPos})
-
-	text.Draw(screen, "PRESS SPACE\n  TO START", mplusBigFont, screenWidth/2-200, screenHeight/2-50, color.White)
-}
-
-func calcFPS() {
-	frames++
-	if helpers.SubtractTimeInSeconds(lastRecordedTime, time.Now()) >= 1 {
-		lastFPS = frames
-		frames = 0
-		lastRecordedTime = time.Now()
-	}
-}
-
-func composePrint(rocket *sim.Rocket) (msg string) {
-	msg = fmt.Sprintf(
-		" FPS: %v\n Rocket Height: %0.2f\n Rocket Thrust: %0.2f%%\n",
-		lastFPS,
-		rocket.Position.Y,
-		rocket.ThrustPercentage())
-
-	msg += fmt.Sprintf(
-		" Rocket Fuel: %0.2f%%\n Ignitions Remaining: %v\n",
-		rocket.FuelPercentage(),
-		rocket.EngineStartsRemaining)
-
-	return
 }
 
 // RocketScale returns a scale of rocket size, ranging from (0.0, 1.0]
@@ -118,4 +111,18 @@ func rocketDrawData() *ebiten.DrawImageOptions {
 	return &ebiten.DrawImageOptions{
 		GeoM: pos,
 	}
+}
+
+func drawLoadingScreen(screen *ebiten.Image) {
+	screen.DrawImage(backgroundImage, &ebiten.DrawImageOptions{})
+
+	groundPos := ebiten.GeoM{}
+	groundPos.Translate(0, screenHeight*(1-groundSlicePercentage))
+	screen.DrawImage(groundImage, &ebiten.DrawImageOptions{GeoM: groundPos})
+
+	grassPos := ebiten.GeoM{}
+	grassPos.Translate(0, screenHeight*(1-groundSlicePercentage))
+	screen.DrawImage(grassImage, &ebiten.DrawImageOptions{GeoM: grassPos})
+
+	text.Draw(screen, "PRESS SPACE\n  TO START", mplusBigFont, screenWidth/2-200, screenHeight/2-50, color.White)
 }
