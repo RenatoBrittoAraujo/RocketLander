@@ -5,6 +5,12 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/renatobrittoaraujo/rl/sim"
+)
+
+const (
+	paralaxMinSize      = 0.5 // Percent
+	changeAsHeightGrows = 700
 )
 
 var (
@@ -26,11 +32,21 @@ func drawParallax(screen *ebiten.Image) {
 
 func drawParallaxImg(screen, image *ebiten.Image, ratio float32) {
 	x := rocket.Position.X
+	y := rocket.Position.Y - sim.RocketLenght/2
+	scale := scale(y, ratio)
 
 	imgWidth, _ := image.Size()
-	posX := (int(x*ratio) % imgWidth) + imgWidth/2
+	imgWidth = int(float64(imgWidth) * scale)
+	posX := float64((int(x*ratio) % imgWidth) + imgWidth/2)
+	posY := (1.0-scale)*float64(screenHeight) - groundSlicePercentage*screenHeight
+	posX -= (1.0 - scale) * float64(imgWidth) / 4
 
-	drawImg(screen, image, posX-imgWidth, 0)
-	drawImg(screen, image, posX+imgWidth, 0)
-	drawImg(screen, image, posX, 0)
+	drawImg(screen, image, posX-float64(imgWidth), posY, scale)
+	drawImg(screen, image, posX+float64(imgWidth), posY, scale)
+	drawImg(screen, image, posX, posY, scale)
+}
+
+func scale(height, ratio float32) float64 {
+	scaling := height*ratio/changeAsHeightGrows + 2 /* because height=0 -> scale=1 always */
+	return float64(1/scaling + paralaxMinSize)
 }

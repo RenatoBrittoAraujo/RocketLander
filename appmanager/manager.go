@@ -43,7 +43,7 @@ func startSimulationInstance() {
 		rocket := sim.CreateRocket()
 		var fps int
 		if draw {
-			fps = simDrawFrames * 5
+			fps = simDrawFrames * 20
 		} else {
 			fps = simCliFrames
 		}
@@ -63,7 +63,7 @@ func startSimulationInstance() {
 			if col := sim.DetectGroundCollision(rocket); col > 0 && !rocket.IsAscending() {
 				if draw {
 					waitKeyPress(ebiten.KeySpace, rocket)
-					time.Sleep(time.Millisecond * 120)
+					time.Sleep(time.Millisecond * 70 /* When spacebar is pressed at the end of simulation, little lag so no overlap with next spacebar press */)
 				}
 				break
 			}
