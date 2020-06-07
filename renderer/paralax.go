@@ -33,7 +33,7 @@ func drawParallax(screen *ebiten.Image) {
 func drawParallaxImg(screen, image *ebiten.Image, ratio float32) {
 	x := rocket.Position.X
 	y := rocket.Position.Y - sim.RocketLenght/2
-	scale := scale(y, ratio)
+	scale := paralaxScale(y, ratio)
 
 	imgWidth, _ := image.Size()
 	imgWidth = int(float64(imgWidth) * scale)
@@ -46,7 +46,7 @@ func drawParallaxImg(screen, image *ebiten.Image, ratio float32) {
 	drawImg(screen, image, posX, posY, scale)
 }
 
-func scale(height, ratio float32) float64 {
+func paralaxScale(height, ratio float32) float64 {
 	scaling := height*ratio/changeAsHeightGrows + 2 /* because height=0 -> scale=1 always */
 	return float64(1/scaling + paralaxMinSize)
 }
