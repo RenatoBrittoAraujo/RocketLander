@@ -8,8 +8,6 @@ import (
 	"github.com/renatobrittoaraujo/rl/sim"
 )
 
-// !!!!!!!!!!!!!!! BEFORE HEIGHT 100, NO SCALING !!!!!!!!!!!!!!!
-
 const (
 	// minGroundDist     = 168             // This variable is an adjustment so the rocket touches the ground
 	// rocketScaleAdjust = 10              // The higher this number, the less the rocket reduces in scale as it goes high
@@ -22,9 +20,8 @@ const (
 )
 
 var (
-	rocketImage, _ = ebiten.NewImage(drawLenght/10, drawLenght, ebiten.FilterDefault)
-	// Holds last X position to create a lagging sensation on X axis of change
-	lastX float32 = 0
+	rocketImage, _     = ebiten.NewImage(drawLenght/10, drawLenght, ebiten.FilterDefault)
+	rocketDrawPosition sim.Point
 )
 
 func init() {
@@ -41,9 +38,10 @@ func drawRocket(screen *ebiten.Image, rocket *sim.Rocket) {
 	pos.Rotate(float64(rocket.Direction - math.Pi/2))
 
 	posX := float64(screenWidth / 2)
-	// fmt.Println(screenPosY(y))
-	posY := float64(screenHeight)*(1.0-groundSlicePercentage) - screenPosY(y)
+	posY := float64(screenHeight)*(1.0-groundSlicePercentage) - rocketYPos(y)
 	pos.Translate(posX, posY)
+
+	rocketDrawPosition = sim.Point{X: float32(posX), Y: float32(posY)}
 
 	screen.DrawImage(rocketImage, &ebiten.DrawImageOptions{GeoM: pos})
 }
@@ -53,9 +51,9 @@ func rocketScale(h float64) float64 {
 		return 1
 	}
 	// These magic numbers represent a logistic function
-	// these numbers are so ad hoc that i've decided to
-	// leave them magic
 
+	// These numbers are so ad hoc that i've decided to
+	// leave them magic
 	// But if you want to change this using the process I did,
 	// find coeficients that feed your need at here
 	// https://www.desmos.com/calculator
@@ -63,14 +61,16 @@ func rocketScale(h float64) float64 {
 	return 0.2/(1+math.Pow(1.0009, h-4000)) + 0.8
 }
 
-func screenPosY(h float64) float64 {
+func rocketYPos(h float64) float64 {
 	if h < noScalingMaxHeight {
 		return h
 	}
 	// These magic numbers make sure that the curve is smooth as it grows and
 	// the line in the plot x=h y=screenheight passes at the point (180, 180)
 
-	// If you want to change this using the process I did,
+	// These numbers are so ad hoc that i've decided to
+	// leave them magic
+	// but if you want to change this using the process I did,
 	// find coeficients that feed your need at here
 	// https://www.desmos.com/calculator
 	// using vvv that as base

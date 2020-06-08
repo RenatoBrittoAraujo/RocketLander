@@ -49,6 +49,7 @@ func drawSimulation(screen *ebiten.Image) {
 	screen.DrawImage(grassImage, &ebiten.DrawImageOptions{GeoM: grassPos})
 
 	drawRocket(screen, rocket)
+	drawParticles(screen, rocket)
 
 	if sim.DetectGroundCollision(rocket) > 0 && !rocket.IsAscending() {
 		text.Draw(screen, "COLLISION DETECTED!", mplusBigFont, screenWidth/2-360, screenHeight/2-150, color.RGBA{255, 70, 70, 255})

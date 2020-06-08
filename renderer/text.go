@@ -30,15 +30,16 @@ func init() {
 
 func composePrint(rocket *sim.Rocket) (msg string) {
 	msg = fmt.Sprintf(
-		" FPS: %v\n Rocket Height: %0.2f\n Rocket Thrust: %0.2f%%\n",
+		" FPS: %v\n Rocket Height: %0.2f\n X Position: %0.2f\n\n",
 		lastFPS,
 		rocket.Position.Y,
-		rocket.ThrustPercentage())
+		rocket.Position.X)
 
 	msg += fmt.Sprintf(
-		" Rocket Fuel: %0.2f%%\n Ignitions Remaining: %v\n",
+		" Rocket Fuel: %0.2f%%\n Ignitions Remaining: %v\n Rocket Thrust: %0.2f%%",
 		rocket.FuelPercentage(),
-		rocket.EngineStartsRemaining)
+		rocket.EngineStartsRemaining,
+		rocket.ThrustPercentage())
 
 	return
 }
