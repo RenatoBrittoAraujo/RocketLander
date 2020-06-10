@@ -43,7 +43,7 @@ func startSimulationInstance() {
 		rocket := sim.CreateRocket()
 		var fps int
 		if draw {
-			fps = simDrawFrames // * 20
+			fps = simDrawFrames * 20
 		} else {
 			fps = simCliFrames
 		}
