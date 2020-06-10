@@ -39,6 +39,10 @@ func drawSimulation(screen *ebiten.Image) {
 
 	drawParallax(screen)
 
+	drawRocket(screen, rocket)
+
+	drawParticles(screen, rocket)
+
 	groundPos := screenHeight * (1 - groundSlicePercentage)
 
 	drawImg(screen, groundImage, 0, groundPos, 1)
@@ -48,10 +52,9 @@ func drawSimulation(screen *ebiten.Image) {
 	grassPos.Translate(0, groundPos)
 	screen.DrawImage(grassImage, &ebiten.DrawImageOptions{GeoM: grassPos})
 
-	drawRocket(screen, rocket)
-	drawParticles(screen, rocket)
-
-	if sim.DetectGroundCollision(rocket) > 0 && !rocket.IsAscending() {
+	if rocket.IsAscending() {
+		text.Draw(screen, "ASCENTION", mplusBigFont, screenWidth/2-190, screenHeight-35, color.RGBA{255, 255, 255, 255})
+	} else if sim.DetectGroundCollision(rocket) > 0 && !rocket.IsAscending() {
 		text.Draw(screen, "COLLISION DETECTED!", mplusBigFont, screenWidth/2-360, screenHeight/2-150, color.RGBA{255, 70, 70, 255})
 		text.Draw(screen, "PRESS SPACE TO RESET", mplusBigFont, screenWidth/2-360, screenHeight/2-50, color.White)
 	} else {

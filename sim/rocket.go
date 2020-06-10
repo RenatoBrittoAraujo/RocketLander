@@ -16,12 +16,12 @@ const (
 	dryMass         = 28000   // kilograms
 	wetMass         = 439000
 	// Constants related purely with simulation
-	ascentTime                          = 5 // seconds
+	ascentTime                          = 10 // seconds
 	maxEngineOnTime                     = 100
 	physicsUpdateRate                   = 1.0 / 60.0                            // per second
 	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg
 	rcsAngularMomentumChangePerTick     = 0.001                                 // kg m^2 s^-1
-	rotation
+	ascentionFrames                     = ascentTime * 60
 	// Actual physics constants
 	g = 9.8
 )
@@ -44,7 +44,7 @@ type Rocket struct {
 	EngineStartsRemaining int
 	fuel                  float32
 	thrust                float32
-	controlsFree          bool
+	frames                int
 }
 
 // ================ ROCKET STRUCT HELPERS
@@ -56,14 +56,13 @@ func CreateRocket() *Rocket {
 		LiftoffTime:           time.Now(), // Simulation starts with liftoff, therefore this is appropriate
 		EngineStartsRemaining: 3,          // Falcon 9 v1.1 Merlin 1D's can ignite at least 3 times https://space.stackexchange.com/questions/13953/how-do-the-falcon-9-engines-re-ignite
 		fuel:                  wetMass - dryMass,
-		controlsFree:          false,
 		Direction:             math.Pi / 2.0,
 	}
 }
 
 // Update the rocket to it's next physics frame
 func (r *Rocket) Update() {
-	// r.Position.Y++
+	r.frames++
 
 	// Rocket orientation
 	r.addRCS()
@@ -91,12 +90,7 @@ func (r *Rocket) Ascend(seed float64) {
 
 // IsAscending returns true whether rocket is in ascension
 func (r *Rocket) IsAscending() bool {
-	if r.controlsFree {
-		return false
-	}
-	timeDiff := helpers.SubtractTimeInSeconds(r.LiftoffTime, time.Now())
-	r.controlsFree = timeDiff >= ascentTime
-	return !r.controlsFree
+	return r.frames <= ascentionFrames
 }
 
 // JetLeft turns on top left rcs jet (in relation to rocket's top)
@@ -168,6 +162,10 @@ func (r *Rocket) BoundingBox() [4]Point {
 		},
 	}
 	return points
+}
+
+func (r *Rocket) Velocity() float32 {
+	return float32(math.Hypot(float64(r.SpeedVector.X), float64(r.SpeedVector.Y)))
 }
 
 // ================ ROCKET INTERNAL FUNCTIONS

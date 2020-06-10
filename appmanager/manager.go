@@ -43,7 +43,7 @@ func startSimulationInstance() {
 		rocket := sim.CreateRocket()
 		var fps int
 		if draw {
-			fps = simDrawFrames * 20
+			fps = simDrawFrames // * 20
 		} else {
 			fps = simCliFrames
 		}
@@ -54,7 +54,7 @@ func startSimulationInstance() {
 			if draw && ebiten.IsKeyPressed(ebiten.KeyR) {
 				break
 			}
-			if rocket.IsAscending() && false {
+			if rocket.IsAscending() {
 				rocket.Ascend(1)
 			} else {
 				inputManager.UpdateSim(rocket)
