@@ -16,7 +16,7 @@ const (
 	dryMass         = 28000   // kilograms
 	wetMass         = 439000
 	// Constants related purely with simulation
-	ascentTime                          = 10 // seconds
+	ascentTime                          = 20 // seconds
 	maxEngineOnTime                     = 100
 	physicsUpdateRate                   = 1.0 / 60.0                            // per second
 	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg
@@ -45,6 +45,7 @@ type Rocket struct {
 	fuel                  float32
 	thrust                float32
 	frames                int
+	ascending             bool
 }
 
 // ================ ROCKET STRUCT HELPERS
@@ -57,6 +58,7 @@ func CreateRocket() *Rocket {
 		EngineStartsRemaining: 3,          // Falcon 9 v1.1 Merlin 1D's can ignite at least 3 times https://space.stackexchange.com/questions/13953/how-do-the-falcon-9-engines-re-ignite
 		fuel:                  wetMass - dryMass,
 		Direction:             math.Pi / 2.0,
+		ascending:             true,
 	}
 }
 
@@ -79,18 +81,44 @@ func (r *Rocket) Update() {
 
 // ================ ROCKET EXTERNAL FUNCTIONS
 
+// Consts below must be pairwise coprime, they are responsible for the seamingly randomness in random seed
+// Altering them means breaking current seed logic
+const (
+	cA = 5.0
+	cB = 3.0
+	cC = 2.0
+)
+
 // Ascend changes ascetion parameters randomly given seed
 //
 // Seed == 1 goes straight up
 //
-// Any other seed generates random (coherent) behaviour
-func (r *Rocket) Ascend(seed float64) {
-	r.SetThrust(1)
+// Any other seed generates pseudorandom, coherent and repeatable behaviour for any given input
+func (r *Rocket) Ascend(seed float32) {
+	if seed == 1 {
+
+	}
+	duration := (helpers.Sinf32(cC*seed*seed)+1.0)*ascentionFrames/5 + ascentionFrames
+	if r.frames > int(duration) {
+		r.SetThrust(0)
+		r.ascending = false
+		return
+	}
+	// Random thust varying from [0.8, 1.0]
+	newThrust := (helpers.Sinf32(cA*seed*r.ThrustPercentage())+1.0)/20.0 + 0.9
+	r.SetThrust(newThrust)
+	// Target angle is varying from [67.5, 112.5]
+	targetAngle := math.Pi/2.0 + helpers.Cosf32(cB*seed)*math.Pi/8.0
+	if r.Direction > targetAngle {
+		r.JetLeft()
+	} else if r.Direction < targetAngle {
+		r.JetRight()
+	}
 }
 
 // IsAscending returns true whether rocket is in ascension
 func (r *Rocket) IsAscending() bool {
-	return r.frames <= ascentionFrames
+	return r.ascending
 }
 
 // JetLeft turns on top left rcs jet (in relation to rocket's top)

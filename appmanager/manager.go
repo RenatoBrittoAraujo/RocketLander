@@ -1,6 +1,8 @@
 package appmanager
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
@@ -41,6 +43,9 @@ func StartSimulationDriver(argdraw bool, arginputType int) {
 func startSimulationInstance() {
 	for {
 		rocket := sim.CreateRocket()
+		rand.Seed(time.Now().Local().UnixNano())
+		seed := rand.Int()*100000000 - 50000000
+		fmt.Println("SEED USED:", seed)
 		var fps int
 		if draw {
 			fps = simDrawFrames * 20
@@ -55,7 +60,7 @@ func startSimulationInstance() {
 				break
 			}
 			if rocket.IsAscending() {
-				rocket.Ascend(1)
+				rocket.Ascend(float32(seed))
 			} else {
 				inputManager.UpdateSim(rocket)
 			}
