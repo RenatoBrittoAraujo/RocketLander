@@ -38,12 +38,13 @@ func drawParallaxImg(screen, image *ebiten.Image, ratio float32) {
 	imgWidth, _ := image.Size()
 	imgWidth = int(float64(imgWidth) * scale)
 	posX := float64((int(x*ratio) % imgWidth) + imgWidth/2)
-	posY := (1.0-scale)*float64(screenHeight) - groundSlicePercentage*screenHeight
+	posY := (1.0-scale)*float64(screenHeight)*1.2 - groundSlicePercentage*screenHeight
 	posX += (1.0 - scale) * float64(imgWidth) / 2
 
+	drawImg(screen, image, posX-2*float64(imgWidth), posY, scale)
 	drawImg(screen, image, posX-float64(imgWidth), posY, scale)
-	drawImg(screen, image, posX+float64(imgWidth), posY, scale)
 	drawImg(screen, image, posX, posY, scale)
+	drawImg(screen, image, posX+float64(imgWidth), posY, scale)
 }
 
 func paralaxScale(height, ratio float32) float64 {
