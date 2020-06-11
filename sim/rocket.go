@@ -16,7 +16,7 @@ const (
 	dryMass         = 28000   // kilograms
 	wetMass         = 439000
 	// Constants related purely with simulation
-	ascentTime                          = 20 // seconds
+	ascentTime                          = 5 // seconds
 	maxEngineOnTime                     = 100
 	physicsUpdateRate                   = 1.0 / 60.0                            // per second
 	fuelComsumptionPerSecondAtMaxThrust = (wetMass - dryMass) / maxEngineOnTime // kg
@@ -95,13 +95,14 @@ const (
 //
 // Any other seed generates pseudorandom, coherent and repeatable behaviour for any given input
 func (r *Rocket) Ascend(seed float32) {
-	if seed == 1 {
-
-	}
 	duration := (helpers.Sinf32(cC*seed*seed)+1.0)*ascentionFrames/5 + ascentionFrames
 	if r.frames > int(duration) {
 		r.SetThrust(0)
 		r.ascending = false
+		return
+	}
+	if seed == 1 {
+		r.SetThrust(1)
 		return
 	}
 	// Random thust varying from [0.8, 1.0]

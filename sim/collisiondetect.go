@@ -1,5 +1,9 @@
 package sim
 
+const (
+	MaxLandingVelocity = 10
+)
+
 // DetectGroundCollision returns true if ground collision happend
 func DetectGroundCollision(r *Rocket) (collision int) {
 	points := r.BoundingBox()

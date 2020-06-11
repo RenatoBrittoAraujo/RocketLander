@@ -39,6 +39,19 @@ func drawSimulation(screen *ebiten.Image) {
 
 	drawParallax(screen)
 
+	drawProgressBar(screen, rocket.FuelPercentage(), screenWidth-60, 360, blueBar)
+
+	velocity := rocket.Velocity()
+	if velocity > sim.MaxLandingVelocity*20 {
+		velocity = sim.MaxLandingVelocity * 20
+	}
+	speedBar := redBar
+	if velocity <= sim.MaxLandingVelocity {
+		speedBar = greenBar
+	}
+	velocity /= sim.MaxLandingVelocity * 20
+	drawProgressBar(screen, velocity, screenWidth-30, 360, speedBar)
+
 	drawRocket(screen, rocket)
 
 	drawParticles(screen, rocket)
