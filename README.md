@@ -23,7 +23,7 @@ O foguete se caracteriza por um retângulo com um lado 10 vezes mais comprido qu
 1) O foguete entrou em contato com o chão
 
 
-2) A velocidade (vetor + módulo) do foguete ao tocar no chão não pode exceder [ENCONTRAR VALOR RAZOÁVEL]
+2) A velocidade (horizontal + vertical) do foguete ao tocar no chão não pode exceder 20 m/s.
 
 
 3) O vetor que corre do topo do foguete até a base deve fazer ângulo de - 90° +- 2° com o vetor que corre da esquerda até a direita do plano de coordenadas.
