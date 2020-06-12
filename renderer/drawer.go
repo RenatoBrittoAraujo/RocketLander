@@ -1,7 +1,9 @@
 package renderer
 
 import (
+	"fmt"
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -22,6 +24,7 @@ var (
 	backgroundImage, _ = ebiten.NewImage(int(width), int(height), ebiten.FilterDefault)
 	groundImage, _     = ebiten.NewImage(int(width), int(height*groundSlicePercentage), ebiten.FilterDefault)
 	grassImage, _      = ebiten.NewImage(int(width), int(height*grassSlicePercentage), ebiten.FilterDefault)
+	featureImage, _    = ebiten.NewImage(int(width*0.6), 80, ebiten.FilterDefault)
 )
 
 func init() {
@@ -29,7 +32,7 @@ func init() {
 	groundImage.Fill(color.RGBA{153, 102, 0, 255})       // Brownish
 	grassImage.Fill(color.RGBA{100, 240, 100, 255})      // Greenish
 	backgroundImage.Fill(color.RGBA{120, 120, 240, 255}) // Blueish
-
+	featureImage.Fill(color.White)
 }
 
 func drawSimulation(screen *ebiten.Image) {
@@ -68,8 +71,17 @@ func drawSimulation(screen *ebiten.Image) {
 	if rocket.IsAscending() {
 		text.Draw(screen, "ASCENTION", mplusBigFont, screenWidth/2-190, screenHeight-35, color.RGBA{255, 255, 255, 255})
 	} else if sim.DetectGroundCollision(rocket) > 0 && !rocket.IsAscending() {
-		text.Draw(screen, "COLLISION DETECTED!", mplusBigFont, screenWidth/2-360, screenHeight/2-150, color.RGBA{255, 70, 70, 255})
-		text.Draw(screen, "PRESS SPACE TO RESET", mplusBigFont, screenWidth/2-360, screenHeight/2-50, color.White)
+		success := sim.LandingScore(rocket) >= 0
+		msgColor := color.RGBA{255, 90, 90, 255}
+		if success {
+			msgColor = color.RGBA{70, 200, 70, 255}
+		}
+		drawImg(screen, featureImage, screenWidth/5-60, 65, 1)
+		text.Draw(screen, "Landing Score: "+fmt.Sprintf("%0.2f", sim.LandingScore(rocket)), mplusBigFont, screenWidth/2-420, 130, msgColor)
+		text.Draw(screen, "Vertical Speed: "+fmt.Sprintf("%0.2f m/s", -rocket.SpeedVector.Y), mplusBigFont, screenWidth/2-420, 200-20, color.White)
+		text.Draw(screen, "Horizontal Speed: "+fmt.Sprintf("%0.2f m/s", rocket.SpeedVector.X), mplusBigFont, screenWidth/2-420, 270-20, color.White)
+		text.Draw(screen, "Angle: "+fmt.Sprintf("%0.2f°", rocket.Direction*180.0/math.Pi-90), mplusBigFont, screenWidth/2-420, 340-20, color.White)
+		text.Draw(screen, "PRESS SPACE TO RESET", mplusBigFont, screenWidth/2-360, screenHeight-20, color.White)
 	} else {
 		ebitenutil.DebugPrint(screen, composePrint(rocket))
 	}

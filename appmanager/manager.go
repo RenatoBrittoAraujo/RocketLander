@@ -48,7 +48,7 @@ func startSimulationInstance() {
 		fmt.Println("SEED USED:", seed)
 		var fps int
 		if draw {
-			fps = simDrawFrames //* 20
+			fps = simDrawFrames * 20
 		} else {
 			fps = simCliFrames
 		}
