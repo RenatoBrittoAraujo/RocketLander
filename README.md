@@ -26,7 +26,7 @@ O foguete se caracteriza por um retângulo com um lado 10 vezes mais comprido qu
 2) A velocidade (horizontal + vertical) do foguete ao tocar no chão não pode exceder 20 m/s.
 
 
-3) O vetor que corre do topo do foguete até a base deve fazer ângulo de - 90° +- 2° com o vetor que corre da esquerda até a direita do plano de coordenadas.
+3) O vetor que corre do topo do foguete até a base deve fazer ângulo de - 90° +- 5° com o vetor que corre da esquerda até a direita do plano de coordenadas.
 
 4) Após tocar no chão, o input do usuário é cortado e quatro segundos são contados em que se checa se o ângulo citado no item anterior permanece dentro dos limites.
 
