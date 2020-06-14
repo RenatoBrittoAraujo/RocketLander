@@ -24,12 +24,23 @@ var (
 	draw          bool
 	loaded        bool
 	inputManager  input.Manager
+	seed          int
+	createSeed    bool
+	fps           int
 )
 
 // StartSimulationDriver receives draw bool and run sim with screen drawing or on CLI
-func StartSimulationDriver(argdraw bool, arginputType int) {
+func StartSimulationDriver(argdraw bool, arginputType int, argseed int, argfps int) {
 	inputType = arginputType
 	draw = argdraw
+	if argseed != 0 {
+		seed = argseed
+	} else {
+		createSeed = true
+	}
+	if argfps != 0 {
+		fps = argfps
+	}
 	linputManager, err := input.CreateInput(inputType)
 	if err {
 		panic("Input \"" + input.InputString[inputType] + "\" has not been initalized correctly")
@@ -43,19 +54,23 @@ func StartSimulationDriver(argdraw bool, arginputType int) {
 func startSimulationInstance() {
 	for {
 		rocket := sim.CreateRocket()
-		rand.Seed(time.Now().Local().UnixNano())
-		seed := rand.Int()*100000000 - 50000000
+		if createSeed {
+			rand.Seed(time.Now().Local().UnixNano())
+			seed = rand.Int()*100000000 - 50000000
+		}
 		fmt.Println("SEED USED:", seed)
-		var fps int
-		if draw {
-			fps = simDrawFrames * 20
+		var cfps int
+		if fps != 0 {
+			cfps = fps
+		} else if draw {
+			cfps = simDrawFrames * 20
 		} else {
-			fps = simCliFrames
+			cfps = simCliFrames
 		}
 		if draw {
 			waitKeyPress(ebiten.KeySpace, nil)
 		}
-		for range time.Tick(time.Second / time.Duration(fps)) {
+		for range time.Tick(time.Second / time.Duration(cfps)) {
 			if draw && ebiten.IsKeyPressed(ebiten.KeyR) {
 				break
 			}
@@ -76,7 +91,7 @@ func startSimulationInstance() {
 				rocketChannel <- rocket
 			}
 		}
-		go logLanding(rocket, inputType, fps, seed)
+		go logLanding(rocket, inputType, cfps, seed)
 	}
 }
 
