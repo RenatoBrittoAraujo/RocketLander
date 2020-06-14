@@ -17,15 +17,18 @@ var (
 	// Holds paralaxes images
 	paralax1 *ebiten.Image
 	paralax2 *ebiten.Image
+	paralax3 *ebiten.Image
 )
 
 func init() {
 	// Loads paralax images
 	paralax1, _, _ = ebitenutil.NewImageFromFile("assets/Paralax1.png", ebiten.FilterDefault)
 	paralax2, _, _ = ebitenutil.NewImageFromFile("assets/Paralax2.png", ebiten.FilterDefault)
+	paralax3, _, _ = ebitenutil.NewImageFromFile("assets/Paralax3.png", ebiten.FilterDefault)
 }
 
 func drawParallax(screen *ebiten.Image) {
+	drawParallaxImg(screen, paralax3, 0.2)
 	drawParallaxImg(screen, paralax2, 0.5)
 	drawParallaxImg(screen, paralax1, 1.0)
 }
