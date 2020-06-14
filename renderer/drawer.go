@@ -78,9 +78,9 @@ func drawSimulation(screen *ebiten.Image) {
 		}
 		drawImg(screen, featureImage, screenWidth/5-60, 65, 1)
 		text.Draw(screen, "Landing Score: "+fmt.Sprintf("%0.2f", sim.LandingScore(rocket)), mplusBigFont, screenWidth/2-420, 130, msgColor)
-		text.Draw(screen, "Vertical Speed: "+fmt.Sprintf("%0.2f m/s", -rocket.SpeedVector.Y), mplusBigFont, screenWidth/2-420, 200-20, color.White)
-		text.Draw(screen, "Horizontal Speed: "+fmt.Sprintf("%0.2f m/s", rocket.SpeedVector.X), mplusBigFont, screenWidth/2-420, 270-20, color.White)
-		text.Draw(screen, "Angle: "+fmt.Sprintf("%0.2f°", rocket.Direction*180.0/math.Pi-90), mplusBigFont, screenWidth/2-420, 340-20, color.White)
+		text.Draw(screen, "Vertical Speed: "+fmt.Sprintf("%0.2f m/s", -rocket.SpeedVector.Y), mplusBigFont, screenWidth/2-420, 200+70, color.White)
+		text.Draw(screen, "Horizontal Speed: "+fmt.Sprintf("%0.2f m/s", rocket.SpeedVector.X), mplusBigFont, screenWidth/2-420, 270+70, color.White)
+		text.Draw(screen, "Angle: "+fmt.Sprintf("%0.2f°", rocket.Direction*180.0/math.Pi-90), mplusBigFont, screenWidth/2-420, 340+70, color.White)
 		text.Draw(screen, "PRESS SPACE TO RESET", mplusBigFont, screenWidth/2-360, screenHeight-20, color.White)
 	} else {
 		ebitenutil.DebugPrint(screen, composePrint(rocket))

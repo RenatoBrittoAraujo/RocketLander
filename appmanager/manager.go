@@ -76,6 +76,7 @@ func startSimulationInstance() {
 				rocketChannel <- rocket
 			}
 		}
+		go logLanding(rocket, inputType, fps, seed)
 	}
 }
 
