@@ -1,6 +1,8 @@
 # RocketLander
 2D Go simulation about landing a rocket SpaceX style using AI
 
+![](https://media.giphy.com/media/JUwr9tx3HGn8q0Ws2t/giphy.gif)
+
 ## Links
 
 [Trello Backlog](https://trello.com/b/T70DyPsA/rocketlander)
